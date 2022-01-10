@@ -29,7 +29,7 @@ let FORMAT_TIMESTAMP             = "yyyyMMddHHmmss";
 let NAME_SHEET_USAGE             = "!USAGE";
 let NAME_SHEET_LOG               = "!LOG";
 let NAME_SHEET_ERROR             = "!ERROR";
-let SHEET_NAME_COMMON_SETTINGS   = "%settings";
+let SHEET_NAME_COMMON_SETTINGS   = "%Video IDs%";
 
 //=====================================================================================================================
 // DEFINES
@@ -224,7 +224,7 @@ function getComments( videoId:string, parentId:string, pageToken:string, seqTop:
 }
 
 //
-// Func: getData
+// Name: getData
 // Desc:
 //
 function getData(headerInfo:HeaderInfo ):DataRow[] {
@@ -234,7 +234,7 @@ function getData(headerInfo:HeaderInfo ):DataRow[] {
 }
 
 //
-// Func: updateSheet
+// Name: updateSheet
 // Desc:
 //
 function updateSheet(sheet, videoId:string):string {
@@ -263,7 +263,7 @@ function updateSheet(sheet, videoId:string):string {
 }
 
 //
-// Func: getVideoIds
+// Name: getVideoIds
 // Desc:
 //
 function getVideoIds( sheet ):string[] {
@@ -285,27 +285,32 @@ function getVideoIds( sheet ):string[] {
 }
 
 //
-// Func: main
+// Name: main
 // Desc: entry point of this proguram
 //
 function main() {
   try {
-    let sheetVideoIds = g_book.getSheetByName("%Video IDs%");
-    if (!sheetVideoIds) {
-      throw new Error("The sheet \"%Video IDs%\" was not found.");
+    let sheetConfig = g_book.getSheetByName(SHEET_NAME_COMMON_SETTINGS);
+    if (!sheetConfig) {
+      throw new Error("The sheet \"" + SHEET_NAME_COMMON_SETTINGS + "\" was not found.");
     }
-    let videoIds: string[] = getVideoIds(sheetVideoIds);
+    let videoIds: string[] = getVideoIds(sheetConfig);
     for (let i = 0; i < videoIds.length; i++) {
       if (!videoIds[i]) {
         continue;
       }
       let sheet = g_book.getSheetByName(videoIds[i]);
       if (!sheet) {
-        sheet = g_book.insertSheet(videoIds[i]);
+        sheet = g_book.insertSheet(videoIds[i], g_book.getNumSheets());
       }
       let videoTitle:string = updateSheet(sheet, videoIds[i]);
       if (videoTitle) {
-        sheetVideoIds.getRange(i + 1 + OFFSET_ROW_VIDEO_LIST, 2, 1, 1).setValue('=HYPERLINK("https://www.youtube.com/watch?v='+ videoIds[i] + '", "' + videoTitle +'")');
+        sheetConfig.getRange(i + 1 + OFFSET_ROW_VIDEO_LIST, 2, 1, 3).setValues(
+          [['=HYPERLINK("https://www.youtube.com/watch?v='+ videoIds[i] + '", "' + videoTitle +'")'
+          , "OK"
+          , g_timestamp]]);
+      } else {
+        sheetConfig.getRange(i + 1 + OFFSET_ROW_VIDEO_LIST, 2, 1, 3).setValues([['' , "OK", g_timestamp]]);
       }
     }
   }
